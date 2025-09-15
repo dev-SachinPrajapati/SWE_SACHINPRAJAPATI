@@ -1,0 +1,17 @@
+1. Message Bus vs Direct Write
+Use message bus when you need decoupling, spikes tolerance, multi-subscriber processing. Direct writes are simpler but tightly couple producer/consumer.
+
+2. Object Store vs Block Storage
+Object storage scales for PB. Block/NAS is faster for low-latency small IO but doesn’t scale cost-effectively.
+
+3. Streaming vs Batch
+Streaming for near-real-time detection/alerting; batch for heavy reprocessing and complex analytics. Combine both (Lambda or Kappa architectures).
+
+4. Exactly-once vs At-least-once
+Exactly-once is costly; often at-least-once with idempotent processing is sufficient for satellite pipelines where you can detect duplicates via checksums and metadata.
+
+5. SQL vs NoSQL for Metadata
+Use SQL when you need strong consistency and complex queries (joins). NoSQL when you require write scalability. A hybrid (Postgres for metadata & Elastic for search) works well.
+
+6.Geo-replication
+Synchronous replication across regions is expensive and may increase latency. For critical mission data, async cross-region with automatic rehydration and validation is common.
