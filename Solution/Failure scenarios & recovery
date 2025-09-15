@@ -1,0 +1,14 @@
+1. Ingest node fails mid-upload
+Upload is multi-part → other node retries using same multi-part; metadata marks partial → finalize or abort.
+
+2. Kafka broker outage
+Configure replication factor >2 and min.insync.replicas; producers buffer and retry; have a DLQ for messages that fail continually.
+
+3. Consumer fails after writing derived file but before committing offset
+Use idempotent writes + metadata update + transactional commits if possible. On restart check derivedPath existence and metadata to avoid reprocessing.
+
+4. Object store region outage
+Cross-region replication or backup bucket; failover readers to replica; alert SRE to restore.
+
+5. Metadata DB outage
+Read replicas + warm standby; store minimal essential info in Kafka for recovery; degrade to read-only for non-critical functions.
