@@ -1,0 +1,20 @@
+# Message format (Kafka message)
+{
+  "message_id": "uuid",                         // unique identifier for this Kafka message
+  "satellite_id": "SAT-1",                      // which satellite sent this data
+  "ingest_time": "2025-09-14T12:34:56Z",        // when the data was ingested
+  "frame_seq": 12345,                           // frame sequence number (used for ordering)
+
+  "meta": {                                     // additional metadata about the frame
+    "capture_ts": "2025-09-14T12:34:54Z",       // timestamp when the frame was captured
+    "orbit": 1150,                              // orbit number of the satellite
+    "product_type": "raw",                      // type of product: raw frame in this case
+    "compression": "lz4",                       // compression algorithm applied
+    "data_length": 1048576                      -- size of the payload in bytes
+  },
+
+  "storage_path": "s3://raw-bucket/2025/09/14/SAT-1/frame_12345.lz4",  
+  // full path in object storage where the actual frame is stored
+
+  "checksum": "sha256:..."                      // checksum for integrity validation
+}
