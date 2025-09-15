@@ -1,0 +1,74 @@
+A. Brute Force (single-node, synchronous writes)
+
+Architecture: One ingest server accepts satellite frames, writes directly to single NAS or single S3 bucket, runs local processing jobs on the same machine, stores results in local DB.
+Pseudocode: (very similar to ingestFrame above but single-threaded; direct DB writes)
+
+Pros
+Simple to implement and explain.
+Low initial cost.
+Good for prototypes or limited scale (small university project).
+
+Cons
+Single point of failure.
+No real scalability — CPU, disk, network are bottlenecks.
+No decoupling — backpressure from slower storage blocks ingestion.
+Hard to achieve high availability and large scale.
+When suitable: Very small volume, short-lived prototypes, demo.
+
+
+
+
+B. Better (decoupled, scalable components, but not fully optimized)
+
+Architecture:
+Ingest gateway writes to object store and publishes to Kafka.
+Kafka for decoupling; consumers do processing; metadata in RDBMS.
+Batch jobs for heavy analytics.
+
+Key improvements over brute:
+Decoupling via message bus, concurrent consumers.
+Horizontal scalability for processors.
+Durability via object store + Kafka replication.
+
+Pros
+Scales horizontally.
+Reliable semantics if checkpoints are used.
+Simpler operational model using existing open-source pieces (Kafka, S3, Spark).
+
+Cons
+Cost increases (Kafka cluster).
+Potential for duplicate processing if not using transactions (but acceptable with idempotence).
+Might still be suboptimal for geo-distributed workloads or very low-latency retrieval.
+
+
+
+C. Optimal (enterprise-grade for mission-critical, TB→PB)
+
+Architecture highlights
+Edge ingestion with multiple redundant ingest edge nodes close to ground stations.
+Durable streaming with partitioning, geo-replication (Pulsar/Kafka MirrorMaker2).
+Object storage optimized for scale (S3 with lifecycle, multi-part uploads, prefix sharding).
+Streaming processing with exactly-once semantics (Flink with checkpoints or Kafka Streams with transactions).
+Metadata stored in strongly consistent store for metadata (Cloud Spanner / CockroachDB / Postgres with replication).
+Tile generation service for imagery (COG optimization).
+CDN + Pre-signed URLs for fast retrieval; tile caching for heavy reads.
+Automated failover and cross-region DR; asynchronous archival workflow for cold storage.
+Observability: metrics, traces, SLOs; chaos testing.
+
+Key implementation details
+Idempotency keys: message id + file checksum to avoid double processing.
+Backpressure and flow control: configured Kafka quotas, consumer autoscaling.
+Partitioning strategy: partition by satellite_id + hashed time window to ensure ordering per satellite while allowing parallelism.
+Checkpointing: stream engine checkpoints to durable store; commit once derived artifacts are durable in object store.
+Data formats: raw stored compressed binary, derived stored as Cloud-Optimized GeoTIFF (COG) for imagery; columnar (Parquet) for analytics.
+Lifecycle rules: hot (30d) → warm (90d) → cold (archive).
+Security: SSE-KMS for encryption, IAM roles, audit logging.
+
+Pros
+Durable, high throughput, low-latency reads with caching, cost-efficient with lifecycle.
+SLO-driven operations—99.99% ingestion availability, <5s to make raw file available post-upload (numbers are example SLOs).
+
+Cons
+Higher complexity & operational cost.
+Requires skilled SRE/DevOps to run.
+More components to monitor and secure.
