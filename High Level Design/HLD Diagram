@@ -1,1 +1,46 @@
 
+@startuml
+title Satellite Data Pipeline - High Level
+
+actor "Satellite Ground Station" as GS
+
+node "Ingest Edge" {
+  [Ingest Gateway]
+}
+node "Streaming Layer" {
+  [Kafka / Pulsar]
+}
+node "Raw Storage" {
+  [Object Storage (S3/MinIO)]
+}
+node "Metadata & Catalog" {
+  [Metadata DB]
+  [Search Index (Elastic/Catalog)]
+}
+node "Processing Cluster" {
+  [Stream Processors]
+  [Batch Jobs (Spark)]
+}
+node "Derived/Analytics" {
+  [Parquet Data Lake]
+  [Tile Server / GeoDB]
+}
+node "Serving Layer" {
+  [API Gateway]
+  [Auth Service]
+}
+node "Monitoring" {
+  [Prometheus]
+  [Grafana]
+}
+
+GS --> "Ingest Gateway" : raw frames
+"Ingest Gateway" --> "Kafka / Pulsar" : produce messages
+"Kafka / Pulsar" --> "Stream Processors" : subscribe
+"Stream Processors" --> "Object Storage (S3/MinIO)" : write raw/derived
+"Stream Processors" --> "Metadata DB" : update metadata/checkpoints
+"Batch Jobs (Spark)" --> "Parquet Data Lake" : bulk transform
+"API Gateway" --> "Metadata DB" : queries
+"API Gateway" --> "Object Storage (S3/MinIO)" : pre-signed URLs
+"Monitoring" --> all
+@enduml
