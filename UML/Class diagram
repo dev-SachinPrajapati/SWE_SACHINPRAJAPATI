@@ -1,0 +1,36 @@
+@startuml
+class IngestGateway {
+  +ingest(frame)             // Public method: main entry point to receive a frame
+  -validate()                // Private method: validate the frame (checksum, size, schema)
+  -upload()                  // Private method: upload frame to storage
+  -publish()                 // Private method: publish reference message to Kafka
+}
+
+class StorageClient {
+  +put(path, bytes)          // Store raw/derived data in object storage
+  +get(path)                 // Retrieve data from object storage
+  +presign(path, ttl)        // Generate temporary signed URL for client download
+}
+
+class KafkaProducer {
+  +produce(topic, key, message)   // Publish a message to a Kafka topic
+}
+
+class StreamProcessor {
+  +run()                     // Main loop that continuously consumes Kafka messages
+  -process(msg)              // Private method: process one message (transform, derive, etc.)
+}
+
+class MetadataDao {
+  +insert(metadata)          // Insert a new metadata record
+  +updateStatus(path, status)// Update file status (received, processed, archived, etc.)
+  +query(filters)            // Query metadata based on filters (e.g., satellite_id, time)
+}
+
+IngestGateway --> StorageClient    // Gateway uses storage client to upload frames
+IngestGateway --> KafkaProducer    // Gateway uses Kafka producer to publish events
+StreamProcessor --> StorageClient  // Processor fetches raw data and stores derived products
+StreamProcessor --> MetadataDao    // Processor updates metadata after processing
+API --> MetadataDao                // API queries metadata for search
+API --> StorageClient              // API generates presigned URLs for clients
+@enduml
