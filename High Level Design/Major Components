@@ -1,22 +1,13 @@
 
-Major components
+# Major components
 
-Satellite Ingest Gateway (edge): receives raw downlink frames (binary), does light validation & framing.
-
-Message Layer (Streaming Bus): durable log — e.g., Apache Kafka / Pulsar — for decoupling.
-
-Raw Object Store: write raw frames/packets to object storage (S3 / MinIO / Ceph) with partitioning.
-
-Metadata Catalog: RDBMS or wide-column store for indexing files, ingestion status, checksums, spatial/temporal indexes.
-
-Processing Cluster: stream processors (Flink / Spark Streaming / Beam) and batch jobs for heavy transforms, tiling, reformatting (GeoTIFF/COG/HDF5), analytics.
-
-Derived Store / OLAP: columnar store or data lake (Parquet/ORC) for analytics; Geo-indexed tile store for imagery.
-
-Serving API / Retrieval: REST/gRPC service for queries, pre-signed URLs, authentication.
-
-Control Plane: Orchestration (Kubernetes), config, autoscale rules.
-
-Monitoring & Alerting: Prometheus + Grafana, distributed tracing, logs.
-
-DR / Geo-replication: cross-region replication for critical data.
+1. Satellite Ingest Gateway (edge): receives raw downlink frames (binary), does light validation & framing.
+2. Message Layer (Streaming Bus): durable log — e.g., Apache Kafka / Pulsar — for decoupling.
+3. Raw Object Store: write raw frames/packets to object storage (S3 / MinIO / Ceph) with partitioning.
+4. Metadata Catalog: RDBMS or wide-column store for indexing files, ingestion status, checksums, spatial/temporal indexes.
+5. Processing Cluster: stream processors (Flink / Spark Streaming / Beam) and batch jobs for heavy transforms, tiling, reformatting (GeoTIFF/COG/HDF5), analytics.
+6. Derived Store / OLAP: columnar store or data lake (Parquet/ORC) for analytics; Geo-indexed tile store for imagery.
+7. Serving API / Retrieval: REST/gRPC service for queries, pre-signed URLs, authentication.
+8. Control Plane: Orchestration (Kubernetes), config, autoscale rules.
+9. Monitoring & Alerting: Prometheus + Grafana, distributed tracing, logs.
+10. DR / Geo-replication: cross-region replication for critical data.
