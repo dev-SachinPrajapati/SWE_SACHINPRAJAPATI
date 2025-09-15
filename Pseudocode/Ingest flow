@@ -1,0 +1,58 @@
+A) Ingest Function
+
+function ingestFrame(frame):
+  // 1. Validate, extract metadata
+  meta = parseFrameHeader(frame)                  # Extract metadata like satellite_id, timestamp, orbit
+  storagePath = buildStoragePath(meta)            # Build storage path (e.g., s3://bucket/date/sat/frame)
+
+  // 2. Upload to object store
+  uploadResult = objectStore.put(storagePath, compress(frame.payload)) 
+  # Compress payload and upload to object storage
+
+  if not uploadResult.success:                    
+    retry with backoff or alert                   # If upload fails, retry with exponential backoff or alert ops team
+
+  // 3. Publish message referencing stored file
+  message = buildMessage(meta, storagePath, checksum(uploadResult))  
+  # Create Kafka message with metadata + storage path + checksum
+  kafka.produce(topic="sat.raw", message)         
+  # Publish to Kafka topic for downstream processing
+
+  // 4. Insert/Update metadata
+  metadataDB.insertOrUpdate(fileRecord(meta, storagePath))  
+  # Store metadata entry (id, status, storage path) in DB
+
+
+B) Consumer / Stream Processor
+loop consumer.poll():                              # Continuously poll Kafka for new messages
+  for msg in records:
+    try:
+      // idempotent processing
+      if metadataDB.getStatus(msg.storage_path) == "processed": 
+         consumer.commit(msg)                      # If already processed, skip and commit offset
+         continue
+
+      raw = objectStore.get(msg.storage_path)      # Fetch raw file from object store
+      derived = transformRawToLevel1(raw)          # Process raw → derived product (Level-1 data)
+      derivedPath = objectStore.put(derived)       # Store derived product in object store
+
+      metadataDB.updateStatus(msg.storage_path, "processed", derivedPath)  
+      # Update metadata DB with status=processed + derived file path
+
+      consumer.commit(msg)                         # Commit Kafka offset (or use transactional commit for exactly-once)
+
+    except Exception e:
+      metadataDB.updateStatus(msg.storage_path, "failed")  
+      # Mark record as failed in DB
+      alert(e)                                     # Send alert (Ops/SRE notification)
+      // do not commit offset to allow retry       # Important: leave offset uncommitted so message is retried later
+
+
+
+C) Recovery Logic
+on restart:
+  offsets = metadataDB.getLastOffsets(consumer_group)  
+  # Get last processed offsets for this consumer group from metadata DB
+
+  consumer.seek(offsets)                          
+  # Rewind consumer to last committed offset so processing resumes safely
