@@ -1,13 +1,13 @@
-Goals / Non-functional requirements
+# Goals / Non-functional requirements
 
-Scalability: handle bursts from MB/s → GB/s sustained; store TB→PB.
+1. Scalability: handle bursts from MB/s → GB/s sustained; store TB→PB.
 
-High availability: 99.99%+ for ingestion and metadata; eventual consistency acceptable for large analytic stores.
+2. High availability: 99.99%+ for ingestion and metadata; eventual consistency acceptable for large analytic stores.
 
-Fault tolerance: message durability, checkpointing, automated recovery.
+3. Fault tolerance: message durability, checkpointing, automated recovery.
 
-Low-latency fetch for scientist dashboards; bulk downloads for analysis.
+4. Low-latency fetch for scientist dashboards; bulk downloads for analysis.
 
-Security: encryption at rest/in transit, role-based access control (RBAC), audit logging.
+5. Security: encryption at rest/in transit, role-based access control (RBAC), audit logging.
 
-Cost-awareness: tiered storage (hot/warm/cold).
+6. Cost-awareness: tiered storage (hot/warm/cold).
