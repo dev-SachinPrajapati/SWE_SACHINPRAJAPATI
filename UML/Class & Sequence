@@ -1,0 +1,42 @@
+@startuml
+actor GroundStation                       // Source of satellite frames (uplink from satellite)
+participant IngestGateway                 // First entry point, receives frames from ground station
+participant ObjectStore                   // Durable storage (e.g., S3, MinIO) for raw and processed files
+participant Kafka                         // Message bus to decouple ingestion from processing
+participant StreamProcessor               // Worker/processor that transforms raw frames into derived products
+participant MetadataDB                    // Database storing file metadata, status, and indexes
+participant API                           // External API that clients use to query and fetch data
+
+GroundStation -> IngestGateway : sendFrame(frame)   
+// Ground station sends a raw satellite frame to the ingest gateway
+
+IngestGateway -> ObjectStore : upload(frame)       
+// Ingest gateway uploads the raw frame to object storage
+
+ObjectStore --> IngestGateway : OK + path          
+// Object store responds with success and returns storage path
+
+IngestGateway -> Kafka : produce(reference msg)    
+// Ingest gateway produces a message to Kafka with metadata + storage path
+
+Kafka --> StreamProcessor : deliver(msg)           
+// Kafka delivers the message asynchronously to a subscribed stream processor
+
+StreamProcessor -> ObjectStore : get(raw path)     
+// Processor fetches the raw frame from object storage
+
+StreamProcessor -> ObjectStore : put(derived path) 
+// Processor writes derived/processed data back to object storage
+
+StreamProcessor -> MetadataDB : update status/derivedPath  
+// Processor updates metadata DB with new file path and status
+
+API -> MetadataDB : query(metadata)                
+// API receives a request, queries metadata DB for available products
+
+API -> ObjectStore : presign(derivedPath)          
+// API generates a presigned URL for the requested file in object storage
+
+API --> Client : 302 redirect to presigned url     
+// API returns redirect to client so they can directly download from object store
+@enduml
