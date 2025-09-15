@@ -1,0 +1,9 @@
+1. Ingress: Add more ingest gateways horizontally; shard Kafka topic partitions across brokers; use load balancers and DNS for station routing.
+
+2. Throughput: Increase partition count for Kafka; horizontally scale storage by adding more object lifecycles and sharding keys.
+
+3. Processing: Increase consumer count up to partition parallelism; scale processing cluster (more Flink / Spark workers).
+
+4. Metadata: Partition / shard the metadata DB or move high-write parts to a scalable KV-store; use read replicas for query scaling.
+
+5. Networking: Ensure network bandwidth increases; use dedicated interconnects for ground stations if necessary.
